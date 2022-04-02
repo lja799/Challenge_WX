@@ -1,0 +1,48 @@
+name: 'Terraform Apply'
+description: 'Initialise terraform and apply.'
+inputs:
+  arm_client_id:
+    description: 'Azure client identifier'
+    required: true
+  arm_client_secret:
+    description: 'Azure client secret'
+    required: true
+  arm_subscription_id:
+    description: 'Azure subscription identifier'
+    required: true
+  arm_tenant_id:
+    description: 'Azure tenant identifier'
+    required: true
+  working_directory:
+    description: 'Default working directory for run steps'
+    required: true
+  tf_vars:
+    description: 'Additional TF Vars'
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - uses: hashicorp/setup-terraform@v1
+
+    - name: Terraform Init
+      id: init
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        ARM_CLIENT_ID: ${{ inputs.arm_client_id }}
+        ARM_CLIENT_SECRET: ${{ inputs.arm_client_secret }}
+        ARM_SUBSCRIPTION_ID: ${{ inputs.arm_subscription_id }}
+        ARM_TENANT_ID: ${{ inputs.arm_tenant_id }}
+      run: terraform init
+   
+    - name: Terraform Apply
+      id: apply
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        ARM_CLIENT_ID: ${{ inputs.arm_client_id }}
+        ARM_CLIENT_SECRET: ${{ inputs.arm_client_secret }}
+        ARM_SUBSCRIPTION_ID: ${{ inputs.arm_subscription_id }}
+        ARM_TENANT_ID: ${{ inputs.arm_tenant_id }}
+        tf_arguments: "-no-color -var='${{ inputs.tf_vars }}'"
+      run: terraform apply -auto-approve ${{ env.tf_arguments }}

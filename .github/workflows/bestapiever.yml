@@ -1,0 +1,26 @@
+on:
+  workflow_dispatch:
+
+name: bestapiever
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 'Checkout Github Action' 
+      uses: actions/checkout@master
+    
+    - name: Log in with Azure
+      uses: azure/login@v1
+      with:
+        creds: '${{ secrets.GH_ACTIONS_SPN }}'
+      
+    - uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'bestapiever01'
+        slot-name: 'preview'
+        images: 'dfranciswoolies/ciarecruitment-bestapiever:247904'
+    
+    - name: Azure logout
+      run: |
+        az logout

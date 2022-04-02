@@ -1,0 +1,54 @@
+
+name: 'Infra'
+
+on: push
+
+env:
+  tf_actions_working_dir: ./Infrastructure/tf
+  TERRAFORM_STATE_CONTAINER: infra-terraform-state
+  TERRAFORM_STOARAGE_ACCOUNT : terraformstate01234
+jobs:
+  plan:
+    name: 'Plan'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.tf_actions_working_dir }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: 'Terraform Plan'
+      uses: ./.github/actions/terraform-plan
+      with:
+        arm_client_id: ${{ secrets.AZURE_AD_CLIENT_ID }}
+        arm_client_secret: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
+        arm_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        arm_tenant_id: ${{ secrets.AZURE_AD_TENANT_ID }}
+        terraform_state_container: ${{ env.TERRAFORM_STATE_CONTAINER }}
+        terraform_storage_account: ${{ env.TERRAFORM_STOARAGE_ACCOUNT }}
+        working_directory: ${{ env.tf_actions_working_dir }}
+        tf_vars: "apikey_secret=${{ secrets.APIKEY }}"
+
+
+  apply:
+    needs: plan
+    name: 'Apply'
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.tf_actions_working_dir }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: 'Terraform Apply'
+      uses: ./.github/actions/terraform-apply
+      with:
+        arm_client_id: ${{ secrets.AZURE_AD_CLIENT_ID }}
+        arm_client_secret: ${{ secrets.AZURE_AD_CLIENT_SECRET }}
+        arm_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        arm_tenant_id: ${{ secrets.AZURE_AD_TENANT_ID }}
+        working_directory: ${{ env.tf_actions_working_dir }}
+        tf_vars: "apikey_secret=${{ secrets.APIKEY }}"

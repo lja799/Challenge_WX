@@ -1,0 +1,76 @@
+name: 'Terraform Plan'
+description: 'Initialise terraform state storage; initialise terraform, validate and plan.'
+inputs:
+  arm_client_id:
+    description: 'Azure client identifier'
+    required: true
+  arm_client_secret:
+    description: 'Azure client secret'
+    required: true
+  arm_subscription_id:
+    description: 'Azure subscription identifier'
+    required: true
+  arm_tenant_id:
+    description: 'Azure tenant identifier'
+    required: true
+  terraform_state_container:
+    description: 'Container name holding the terraform state file'
+    required: true
+  terraform_storage_account:
+    description: 'Storage account name holding the terraform state file'
+    required: true
+  working_directory:
+    description: 'Default working directory for run steps'
+    required: true
+  tf_vars:
+    description: 'Additional TF Vars'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: 'Azure Remote Backend'
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        az login --service-principal -u ${{ inputs.arm_client_id }} -p ${{ inputs.arm_client_secret }} --tenant ${{ inputs.arm_tenant_id }}
+        az storage container create --name '${{ inputs.terraform_state_container }}' --subscription ${{ inputs.arm_subscription_id }} --account-name '${{ inputs.terraform_storage_account }}'
+        az logout
+
+    - uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_wrapper: false
+
+    - name: Terraform Init
+      id: init
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        ARM_CLIENT_ID: ${{ inputs.arm_client_id }}
+        ARM_CLIENT_SECRET: ${{ inputs.arm_client_secret }}
+        ARM_SUBSCRIPTION_ID: ${{ inputs.arm_subscription_id }}
+        ARM_TENANT_ID: ${{ inputs.arm_tenant_id }}
+      run: terraform init
+    
+    - name: Terraform Validate
+      id: validate
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        ARM_CLIENT_ID: ${{ inputs.arm_client_id }}
+        ARM_CLIENT_SECRET: ${{ inputs.arm_client_secret }}
+        ARM_SUBSCRIPTION_ID: ${{ inputs.arm_subscription_id }}
+        ARM_TENANT_ID: ${{ inputs.arm_tenant_id }}      
+      run: terraform validate
+    
+    - name: Terraform Plan
+      id: plan
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      env:
+        ARM_CLIENT_ID: ${{ inputs.arm_client_id }}
+        ARM_CLIENT_SECRET: ${{ inputs.arm_client_secret }}
+        ARM_SUBSCRIPTION_ID: ${{ inputs.arm_subscription_id }}
+        ARM_TENANT_ID: ${{ inputs.arm_tenant_id }}      
+        tf_arguments: "-no-color -var='${{ inputs.tf_vars }}'"
+      run: terraform plan ${{ env.tf_arguments }} -out terraform.plan
