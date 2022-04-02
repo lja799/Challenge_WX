@@ -1,3 +1,8 @@
+API URL = https://bestapiever01.azurewebsites.net/weatherforecast 
+
+Preview Slot URL = https://bestapiever01-preview.azurewebsites.net/weatherforecast
+
+
 **My Approach and Solution Selection**
 
 I approached this challenge as though I was implementing a production system, though I had to keep in mind the time constraints of the challenge. Even though I am more familiar with Azure DevOps to make things more interesting I chose to use GitHub Actions for the deployments.
